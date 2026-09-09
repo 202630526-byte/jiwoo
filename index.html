@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>스마트폰 경보기 v2.0 - AI 발전형</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome 6 아이콘 CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Canvas Confetti (폭죽 효과) -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        @keyframes flash-red {
+            0%, 100% { background-color: #ef4444; color: white; }
+            50% { background-color: #991b1b; color: #fef2f2; }
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-10px); }
+            40%, 80% { transform: translateX(10px); }
+        }
+        .alarm-flash { animation: flash-red 0.4s infinite; }
+        .icon-shake { animation: shake 0.3s infinite; }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 font-sans min-h-screen flex flex-col">
+
+    <!-- 상단 헤더 -->
+    <header class="bg-slate-800 border-b border-slate-700 sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="bg-indigo-600 p-2 rounded-xl text-white">
+                    <i class="fa-solid fa-mobile-retro text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold">스마트폰 경보기 <span class="text-xs bg-indigo-500/30 text-indigo-300 border border-indigo-500/50 px-2 py-0.5 rounded-full ml-1">AI Enhanced</span></h1>
+                    <p class="text-xs text-slate-400">나의 발전을 위해 틈을 내어 공부한다</p>
+                </div>
+            </div>
+            <!-- 연속 성공 스트릭 (AI 보완 아이디어) -->
+            <div class="flex items-center space-x-2 bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-700">
+                <i class="fa-solid fa-fire text-amber-500"></i>
+                <span class="text-xs font-semibold text-slate-300">연속 성공: <span id="streakCount" class="text-amber-400 font-bold">0</span>일</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- 메인 콘텐츠 -->
+    <main class="max-w-6xl mx-auto px-4 py-8 flex-grow w-full space-y-8">
+
+        <!-- 1. 타이머 & 경고 시뮬레이션 영역 -->
+        <section class="bg-slate-800 rounded-3xl p-6 md:p-8 border border-slate-700 shadow-2xl relative overflow-hidden">
+            
+            <!-- 경고 커스텀 옵션 설정 -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <!-- 제한시간 선택 -->
+                <div class="bg-slate-900/80 p-4 rounded-2xl border border-slate-700">
+                    <label class="block text-xs font-bold text-indigo-400 mb-2">⏱️ 제한시간 설정</label>
+                    <select id="timeSelect" class="w-full bg-slate-800 border border-slate-600 rounded-xl p-2 text-sm focus:ring-2 focus:ring-indigo-500 text-slate-200 outline-none">
+                        <option value="10">10초 (빠른 테스트)</option>
+                        <option value="1800">30분 (표준 공부)</option>
+                        <option value="3600">1시간</option>
+                    </select>
+                </div>
+
+                <!-- 다양한 경고음 선택 (AI 구현) -->
+                <div class="bg-slate-900/80 p-4 rounded-2xl border border-slate-700">
+                    <label class="block text-xs font-bold text-red-400 mb-2">🔊 경고음 종류 (4종)</label>
+                    <div class="flex space-x-1">
+                        <select id="alarmSoundType" class="flex-grow bg-slate-800 border border-slate-600 rounded-xl p-2 text-xs focus:ring-2 focus:ring-red-500 text-slate-200 outline-none">
+                            <option value="siren">🚨 긴급 사이렌</option>
+                            <option value="beep">⚠️ 비상 삐- 경고음</option>
+                            <option value="nuclear">☢️ 핵경보 저음</option>
+                            <option value="glitch">👾 8-Bit 글리치</option>
+                        </select>
+                        <button onclick="previewAlarmSound()" class="px-2.5 py-1 bg-red-600/30 hover:bg-red-600/50 text-red-300 border border-red-500/40 text-xs rounded-xl transition" title="들어보기">
+                            <i class="fa-solid fa-volume-high"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 다양한 효과음 선택 (AI 구현) -->
+                <div class="bg-slate-900/80 p-4 rounded-2xl border border-slate-700">
+                    <label class="block text-xs font-bold text-emerald-400 mb-2">🎉 달성 효과음 (3종)</label>
+                    <div class="flex space-x-1">
+                        <select id="successSoundType" class="flex-grow bg-slate-800 border border-slate-600 rounded-xl p-2 text-xs focus:ring-2 focus:ring-emerald-500 text-slate-200 outline-none">
+                            <option value="confetti">🎆 화려한 폭죽음</option>
+                            <option value="levelup">🎺 승리 팡파레</option>
+                            <option value="chime">🔔 성공 차임 종소리</option>
+                        </select>
+                        <button onclick="previewSuccessSound()" class="px-2.5 py-1 bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-300 border border-emerald-500/40 text-xs rounded-xl transition" title="들어보기">
+                            <i class="fa-solid fa-volume-high"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 다양한 아이콘 스타일 선택 (AI 구현) -->
+                <div class="bg-slate-900/80 p-4 rounded-2xl border border-slate-700">
+                    <label class="block text-xs font-bold text-amber-400 mb-2">🚨 경고 아이콘 스타일</label>
+                    <select id="iconStyleSelect" onchange="changeIconStyle()" class="w-full bg-slate-800 border border-slate-600 rounded-xl p-2 text-xs focus:ring-2 focus:ring-amber-500 text-slate-200 outline-none">
+                        <option value="triangle">⚠️ 삼각 비상 표지</option>
+                        <option value="skull">💀 위험 해골 십자가</option>
+                        <option value="siren">🚨 비상 사이렌등</option>
+                        <option value="robot">🤖 화난 AI 로봇</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- 예외 앱 제어 바 -->
+            <div class="bg-slate-900/50 p-3 rounded-xl border border-slate-700/60 flex flex-wrap items-center justify-between text-xs mb-6 gap-2">
+                <span class="font-semibold text-slate-400"><i class="fa-solid fa-shield-halved text-indigo-400 mr-1"></i> 예외 앱 (실행 시 타이머 일시 정지):</span>
+                <div class="flex space-x-4">
+                    <label class="flex items-center space-x-1.5 cursor-pointer">
+                        <input type="checkbox" id="appPhone" onchange="toggleExemptApp('전화')" class="rounded border-slate-600 bg-slate-800 text-indigo-500 focus:ring-0">
+                        <span>📞 전화</span>
+                    </label>
+                    <label class="flex items-center space-x-1.5 cursor-pointer">
+                        <input type="checkbox" id="appMessage" onchange="toggleExemptApp('메시지')" class="rounded border-slate-600 bg-slate-800 text-indigo-500 focus:ring-0">
+                        <span>💬 메시지</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- 메인 디스플레이 카드리프 -->
+            <div id="displayCard" class="bg-slate-900 rounded-2xl p-8 text-center border-2 border-indigo-500/30 transition-all duration-300 relative">
+                <!-- 시각 경고 아이콘 출력부 -->
+                <div id="alarmIconContainer" class="hidden mb-3 text-red-500 text-6xl icon-shake">
+                    <i id="alarmIcon" class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+
+                <div id="statusBadge" class="inline-block px-3 py-1 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-xs font-semibold rounded-full mb-3">
+                    사용 모니터링 대기 중
+                </div>
+
+                <div id="timerDisplay" class="text-6xl md:text-7xl font-extrabold text-white font-mono tracking-wider my-2">
+                    00:00:10
+                </div>
+
+                <!-- 제어 버튼들 -->
+                <div class="flex justify-center items-center space-x-3 mt-6">
+                    <button id="startBtn" onclick="startTimer()" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-lg transition">
+                        <i class="fa-solid fa-play mr-2"></i>타이머 시작
+                    </button>
+                    <button id="pauseBtn" onclick="pauseTimer()" class="px-6 py-3 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-xl shadow-lg transition hidden">
+                        <i class="fa-solid fa-pause mr-2"></i>일시 정지
+                    </button>
+                    <button id="finishBtn" onclick="finishSuccessfully()" class="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-lg transition">
+                        <i class="fa-solid fa-flag-checkered mr-2"></i>시간 내 종료 (성공)
+                    </button>
+                    <button onclick="resetTimer()" class="px-4 py-3 bg-slate-700 hover:bg-slate-600 text-slate-300 font-bold rounded-xl transition" title="리셋">
+                        <i class="fa-solid fa-rotate-right"></i>
+                    </button>
+                </div>
+
+                <!-- 30분 주기 알림 메시지 (토스트) -->
+                <div id="toast" class="hidden absolute bottom-3 left-1/2 transform -translate-x-1/2 bg-amber-500 text-slate-950 font-bold text-xs px-4 py-2 rounded-full shadow-xl">
+                    <i class="fa-solid fa-bell mr-1"></i> <span id="toastMsg">30분 사용 경고</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. 기획 내용 & AI 발전 아이디어 비교 -->
+        <section class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- 기본 기획 내용 -->
+            <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700">
+                <h2 class="text-md font-bold text-slate-200 mb-4 flex items-center">
+                    <i class="fa-solid fa-clipboard-list text-indigo-400 mr-2"></i> 기획 개요 및 사용자
+                </h2>
+                <div class="space-y-3 text-sm text-slate-300">
+                    <p><strong class="text-indigo-300">개요:</strong> AI 코딩을 통해 스마트폰 과다 사용 시 경고음으로 사용을 방해하는 시스템</p>
+                    <p><strong class="text-indigo-300">서비스명:</strong> 스마트폰 경보기 (나의 발전을 위해 틈을 내어 공부한다는 뜻)</p>
+                    <p><strong class="text-indigo-300">주요 사용자:</strong> 휴대폰 사용이 과도한 학생들</p>
+                </div>
+            </div>
+
+            <!-- AI 보완 아이디어 (발전된 기능) -->
+            <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700">
+                <h2 class="text-md font-bold text-slate-200 mb-4 flex items-center">
+                    <i class="fa-solid fa-wand-magic-sparkles text-amber-400 mr-2"></i> AI가 발전시킨 핵심 보완 기능
+                </h2>
+                <ul class="space-y-2 text-xs text-slate-300 list-disc list-inside">
+                    <li><strong class="text-amber-300">다양한 경고/효과음 엔진:</strong> 단일 소리가 아닌 4종 경고음 & 3종 성공음 제공</li>
+                    <li><strong class="text-amber-300">커스텀 아이콘 연출:</strong> 사용자 취향에 맞춘 4가지 비상 아이콘 애니메이션</li>
+                    <li><strong class="text-amber-300">오류 예외 처리 강화:</strong> 타이머 중복 실행 방지 및 예외 앱 자동 일시정지 처리</li>
+                    <li><strong class="text-amber-300">동기부여 스트릭 시스템:</strong> 성공 시 연속 성공 일수가 누적되어 습관 형성 지원</li>
+                </ul>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- 스크립트 엔진 -->
+    <script>
+        let timer = null;
+        let totalSeconds = 10;
+        let remainingSeconds = 10;
+        let isRunning = false;
+        let streak = 0;
+
+        // Web Audio API 오디오 합성 엔진 (외부 소리 파일 없이 고품질음 생성)
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new AudioContext();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        // 1. 다양한 경고음 생성 함수 (AI 제작)
+        function playSelectedAlarmSound() {
+            initAudio();
+            const type = document.getElementById('alarmSoundType').value;
+            const now = audioCtx.currentTime;
+
+            if (type === 'siren') { // 🚨 사이렌
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(500, now);
+                osc.frequency.linearRampToValueAtTime(1000, now + 0.3);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.3);
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.start(now); osc.stop(now + 0.3);
+
+            } else if (type === 'beep') { // ⚠️ 비상 삐-
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(880, now);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.setValueAtTime(0, now + 0.15);
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.start(now); osc.stop(now + 0.15);
+
+            } else if (type === 'nuclear') { // ☢️ 핵경보 저음
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(120, now);
+                osc.frequency.linearRampToValueAtTime(80, now + 0.5);
+                gain.gain.setValueAtTime(0.5, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.5);
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.start(now); osc.stop(now + 0.5);
+
+            } else if (type === 'glitch') { // 👾 8-Bit 글리치
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(1500, now);
+                osc.frequency.setValueAtTime(400, now + 0.05);
+                osc.frequency.setValueAtTime(1200, now + 0.1);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.2);
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.start(now); osc.stop(now + 0.2);
+            }
+        }
+
+        // 2. 다양한 달성 효과음 생성 함수 (AI 제작)
+        function playSelectedSuccessSound() {
+            initAudio();
+            const type = document.getElementById('successSoundType').value;
+            const now = audioCtx.currentTime;
+
+            if (type === 'confetti') { // 🎆 폭죽음
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(200, now);
+                osc.frequency.exponentialRampToValueAtTime(800, now + 0.3);
+                gain.gain.setValueAtTime(0.4, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.start(now); osc.stop(now + 0.3);
+
+            } else if (type === 'levelup') { // 🎺 승리 팡파레
+                [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+                    gain.gain.setValueAtTime(0.2, now + idx * 0.08);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.08 + 0.2);
+                    osc.connect(gain); gain.connect(audioCtx.destination);
+                    osc.start(now + idx * 0.08);
+                    osc.stop(now + idx * 0.08 + 0.2);
+                });
+
+            } else if (type === 'chime') { // 🔔 은은한 차임 종소리
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(1567.98, now);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.start(now); osc.stop(now + 1.2);
+            }
+        }
+
+        function previewAlarmSound() { playSelectedAlarmSound(); }
+        function previewSuccessSound() { playSelectedSuccessSound(); }
+
+        // 아이콘 스타일 변경 함수
+        function changeIconStyle() {
+            const val = document.getElementById('iconStyleSelect').value;
+            const icon = document.getElementById('alarmIcon');
+            
+            icon.className = "fa-solid ";
+            if (val === 'triangle') icon.className += "fa-triangle-exclamation";
+            else if (val === 'skull') icon.className += "fa-skull-crossbones";
+            else if (val === 'siren') icon.className += "fa-lightbulb";
+            else if (val === 'robot') icon.className += "fa-robot";
+        }
+
+        // 시간 업데이트 디스플레이
+        function updateDisplay() {
+            const m = Math.floor(remainingSeconds / 60);
+            const s = remainingSeconds % 60;
+            document.getElementById('timerDisplay').textContent = 
+                `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        }
+
+        document.getElementById('timeSelect').addEventListener('change', (e) => {
+            totalSeconds = parseInt(e.target.value);
+            remainingSeconds = totalSeconds;
+            updateDisplay();
+        });
+
+        // 타이머 시작 (오류 방지 적용)
+        function startTimer() {
+            if (isRunning) return; // 중복 실행 방지 오류 수정
+            initAudio();
+
+            isRunning = true;
+            document.getElementById('startBtn').classList.add('hidden');
+            document.getElementById('pauseBtn').classList.remove('hidden');
+            document.getElementById('statusBadge').textContent = "⏱️ 시간 측정 중...";
+            document.getElementById('statusBadge').className = "inline-block px-3 py-1 bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 text-xs font-semibold rounded-full mb-3";
+
+            timer = setInterval(() => {
+                if (remainingSeconds > 0) {
+                    remainingSeconds--;
+                    updateDisplay();
+                } else {
+                    triggerAlarm(); // 시간 초과
+                }
+            }, 1000);
+        }
+
+        // 타이머 일시정지
+        function pauseTimer() {
+            clearInterval(timer);
+            isRunning = false;
+            document.getElementById('startBtn').classList.remove('hidden');
+            document.getElementById('pauseBtn').classList.add('hidden');
+            document.getElementById('statusBadge').textContent = "⏸️ 일시 정지됨";
+        }
+
+        // 예외 앱 체크 함수
+        function toggleExemptApp(appName) {
+            const isPhone = document.getElementById('appPhone').checked;
+            const isMsg = document.getElementById('appMessage').checked;
+
+            if ((appName === '전화' && isPhone) || (appName === '메시지' && isMsg)) {
+                pauseTimer();
+                showToast(`[예외 앱: ${appName}] 실행으로 타이머가 정지되었습니다.`);
+            }
+        }
+
+        // 시간 초과 경고발생
+        function triggerAlarm() {
+            pauseTimer();
+            const card = document.getElementById('displayCard');
+            const iconContainer = document.getElementById('alarmIconContainer');
+            
+            card.classList.add('alarm-flash');
+            iconContainer.classList.remove('hidden');
+            document.getElementById('statusBadge').textContent = "🚨 사용 시간 초과! 휴대폰을 놓으세요!";
+            document.getElementById('statusBadge').className = "inline-block px-3 py-1 bg-red-900 text-red-100 text-xs font-bold rounded-full mb-3";
+
+            // 경고음 5회 반복
+            let count = 0;
+            const interval = setInterval(() => {
+                playSelectedAlarmSound();
+                count++;
+                if (count >= 5) clearInterval(interval);
+            }, 300);
+        }
+
+        // 성공적으로 시간 내 종료
+        function finishSuccessfully() {
+            if (isRunning || remainingSeconds < totalSeconds) {
+                pauseTimer();
+                
+                // 폭죽 연출
+                confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
+                playSelectedSuccessSound();
+
+                streak++;
+                document.getElementById('streakCount').textContent = streak;
+                showToast(`🎉 성공! 연속 달성 ${streak}일째입니다.`);
+                document.getElementById('statusBadge').textContent = "✨ 목표 달성 성공!";
+            } else {
+                showToast("타이머를 먼저 시작해주세요.");
+            }
+        }
+
+        // 리셋
+        function resetTimer() {
+            pauseTimer();
+            const card = document.getElementById('displayCard');
+            const iconContainer = document.getElementById('alarmIconContainer');
+
+            card.classList.remove('alarm-flash');
+            iconContainer.classList.add('hidden');
+            
+            totalSeconds = parseInt(document.getElementById('timeSelect').value);
+            remainingSeconds = totalSeconds;
+            document.getElementById('statusBadge').textContent = "사용 모니터링 대기 중";
+            document.getElementById('statusBadge').className = "inline-block px-3 py-1 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-xs font-semibold rounded-full mb-3";
+            updateDisplay();
+        }
+
+        // 토스트 알림 메시지
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMsg').textContent = msg;
+            toast.classList.remove('hidden');
+            setTimeout(() => { toast.classList.add('hidden'); }, 3500);
+        }
+
+        updateDisplay();
+    </script>
+</body>
+</html>
